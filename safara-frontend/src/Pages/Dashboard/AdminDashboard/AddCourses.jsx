@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import JoditEditor from "jodit-react";
 import { RxCross2 } from "react-icons/rx";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import useAuthContext from "../../../hooks/useAuthContext";
-import { storage } from "../../../firebase/firebase";
+import Swal from "sweetalert2";
 import { extractYouTubeVideoId, isValidYouTubeUrl } from "../../../utils/youtubeUtils";
 
 const AddCourses = () => {
@@ -124,29 +123,18 @@ const AddCourses = () => {
     }
   };
 
-  // Upload file to Firebase Storage
-  const uploadFileToFirebase = (file, folder) => {
-    return new Promise((resolve, reject) => {
-      const fileName = `${new Date().getTime()}_${file.name}`;
-      const storageRef = ref(storage, `${folder}/${fileName}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress); // Show individual file progress
-        },
-        (error) => reject(error),
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          setCompletedUploads((prev) => prev + 1);
-          setUploadProgress(0); // Reset progress for next file
-          resolve(downloadURL);
-        }
-      );
+  const uploadFileToCloudinary = async (file, folder) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", folder);
+    const res = await fetch(`${baseUrl}/api/upload`, {
+      method: "POST",
+      body: formData,
     });
+    if (!res.ok) throw new Error("Upload failed");
+    const data = await res.json();
+    setCompletedUploads((prev) => prev + 1);
+    return data.url;
   };
 
   const handleAddQuiz = () => {
@@ -190,17 +178,14 @@ const AddCourses = () => {
       let pdfURL = "";
       const videoURLs = [];
 
-      // Upload banner to Firebase
       if (bannerFile) {
-        bannerURL = await uploadFileToFirebase(bannerFile, "images");
+        bannerURL = await uploadFileToCloudinary(bannerFile, "images");
       }
 
-      // Upload PDF to Firebase
       if (pdfFile) {
-        pdfURL = await uploadFileToFirebase(pdfFile, "pdfs");
+        pdfURL = await uploadFileToCloudinary(pdfFile, "pdfs");
       }
 
-      // Upload each video to Firebase (or handle YouTube URLs)
       for (const video of selectedVideos) {
         if (video.videoType === "youtube") {
           videoURLs.push({
@@ -212,7 +197,7 @@ const AddCourses = () => {
             videoFileUrl: "",
           });
         } else {
-          const videoURL = await uploadFileToFirebase(video.videoFile, "videos");
+          const videoURL = await uploadFileToCloudinary(video.videoFile, "videos");
           videoURLs.push({
             videoTitle: video.videoTitle,
             videoLink: videoURL,

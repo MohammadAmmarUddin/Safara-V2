@@ -28,8 +28,6 @@ import useAuthContext from "../hooks/useAuthContext";
 import Swal from "sweetalert2";
 import ReactHtmlParser from "react-html-parser";
 import { Helmet } from "react-helmet";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { storage } from "../firebase/firebase";
 import { extractYouTubeVideoId } from "../utils/youtubeUtils";
 
 const SingleCourse = () => {
@@ -604,22 +602,17 @@ const SingleCourse = () => {
       .catch((error) => console.error("Error during payment process:", error));
   };
 
-  // NEW FEATURE: Upload proof image to Firebase
-  const uploadProofImage = (file) => {
-    return new Promise((resolve, reject) => {
-      const fileName = `${new Date().getTime()}_${file.name}`;
-      const storageRef = ref(storage, `images/${fileName}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      uploadTask.on(
-        "state_changed",
-        null,
-        (error) => reject(error),
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve(downloadURL);
-        }
-      );
+  const uploadProofImage = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "images");
+    const res = await fetch(`${baseUrl}/api/upload`, {
+      method: "POST",
+      body: formData,
     });
+    if (!res.ok) throw new Error("Upload failed");
+    const data = await res.json();
+    return data.url;
   };
 
   // NEW FEATURE: Submit manual payment

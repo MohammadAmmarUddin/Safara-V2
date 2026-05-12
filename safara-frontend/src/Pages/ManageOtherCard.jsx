@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { Helmet } from "react-helmet";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
-import { db } from "../firebase/firebase"; // ✅ use db only here
 import { PiPencilCircleDuotone } from "react-icons/pi";
 import { BsTrash } from "react-icons/bs";
 
@@ -13,15 +11,14 @@ const ManageOtherCard = () => {
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
+  const baseUrl = import.meta.env.VITE_SAFARA_baseUrl;
 
-  // 🔹 Fetch projects from Firestore
   const fetchProjects = async () => {
     try {
-      // ✅ Correct: use Firestore db, not storage
-      const snapshot = await getDocs(collection(db, "otherProjects"));
-      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const res = await fetch(`${baseUrl}/api/other-projects`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
       setCards(data);
-      console.log("data", data);
     } catch (err) {
       console.error("Error fetching projects:", err);
       Swal.fire("Error", "Failed to load projects!", "error");
@@ -53,7 +50,9 @@ const ManageOtherCard = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await deleteDoc(doc(db, "otherProjects", id));
+          await fetch(`${baseUrl}/api/other-projects/${id}`, {
+            method: "DELETE",
+          });
           Swal.fire("Deleted!", "The project has been deleted.", "success");
           fetchProjects();
         } catch (err) {
@@ -91,7 +90,7 @@ const ManageOtherCard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {cards.map((card) => (
             <div
-              key={card.id}
+              key={card._id}
               className="relative bg-white shadow-md rounded-xl overflow-hidden hover:shadow-xl transform hover:scale-[1.02] transition duration-300"
             >
               {/* Floating Edit/Delete Buttons */}
@@ -104,7 +103,7 @@ const ManageOtherCard = () => {
                   <PiPencilCircleDuotone className="h-5 w-5" />
                 </button>
                 <button
-                  onClick={() => handleDelete(card.id)}
+                  onClick={() => handleDelete(card._id)}
                   className="bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-full shadow-md transition-transform hover:-rotate-6"
                   title="Delete Project"
                 >

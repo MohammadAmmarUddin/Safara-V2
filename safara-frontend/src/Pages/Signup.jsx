@@ -3,14 +3,13 @@ import { Link } from "react-router-dom";
 import { useSignup } from "../hooks/useSignup";
 import { FaAngleLeft } from "react-icons/fa6";
 import { useState } from "react";
-import { storage } from "../firebase/firebase";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import DOMPurify from "dompurify";
-import { Helmet } from "react-helmet"; // <-- Import Helmet
+import { Helmet } from "react-helmet";
 
 const Signup = () => {
   const { signup } = useSignup();
   const [uploadPerc, setUploadPerc] = useState(0);
+  const baseUrl = import.meta.env.VITE_SAFARA_baseUrl;
   const {
     register,
     handleSubmit,
@@ -45,33 +44,27 @@ const Signup = () => {
           throw new Error("File is too large. Maximum size is 5MB.");
         }
 
-        const imgName = `${new Date().getTime()}_${selectedImage.name}`;
-        const storageRef = ref(storage, `images/${imgName}`);
-        const uploadTask = uploadBytesResumable(storageRef, selectedImage);
-
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setUploadPerc(Math.round(progress));
-          },
-          (error) => console.error("Error uploading image: ", error),
-          async () => {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            await signup(
-              sanitizedFirstname,
-              sanitizedLastname,
-              sanitizedEmail,
-              sanitizedPhone,
-              role,
-              prevRole,
-              downloadURL,
-              sanitizedPassword
-            );
-            console.log("Signup successful with image URL:", downloadURL);
-          }
+        const formData = new FormData();
+        formData.append("file", selectedImage);
+        formData.append("folder", "images");
+        const res = await fetch(`${baseUrl}/api/upload`, {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) throw new Error("Upload failed");
+        const { url: downloadURL } = await res.json();
+        setUploadPerc(100);
+        await signup(
+          sanitizedFirstname,
+          sanitizedLastname,
+          sanitizedEmail,
+          sanitizedPhone,
+          role,
+          prevRole,
+          downloadURL,
+          sanitizedPassword
         );
+        console.log("Signup successful with image URL:", downloadURL);
       } else {
         await signup(
           sanitizedFirstname,

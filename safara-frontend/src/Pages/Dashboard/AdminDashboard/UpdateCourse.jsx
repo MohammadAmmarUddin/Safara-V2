@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import JoditEditor from "jodit-react";
 import { RxCross2 } from "react-icons/rx";
-import { storage } from "../../../firebase/firebase";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import useAuthContext from "../../../hooks/useAuthContext";
 import Swal from "sweetalert2";
 import { extractYouTubeVideoId } from "../../../utils/youtubeUtils";
@@ -192,29 +190,18 @@ function UpdateCourse() {
     ]);
   };
 
-  // Upload file to Firebase Storage
-  const uploadFileToFirebase = (file, folder) => {
-    return new Promise((resolve, reject) => {
-      const fileName = `${new Date().getTime()}_${file.name}`;
-      const storageRef = ref(storage, `${folder}/${fileName}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        },
-        (error) => reject(error),
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          setCompletedUploads((prev) => prev + 1);
-          setUploadProgress(0); // Reset progress for next file
-          resolve(downloadURL);
-        }
-      );
+  const uploadFileToCloudinary = async (file, folder) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", folder);
+    const res = await fetch(`${baseUrl}/api/upload`, {
+      method: "POST",
+      body: formData,
     });
+    if (!res.ok) throw new Error("Upload failed");
+    const data = await res.json();
+    setCompletedUploads((prev) => prev + 1);
+    return data.url;
   };
 
   // Handle form submission
@@ -237,11 +224,11 @@ function UpdateCourse() {
       const videoURLs = [];
 
       if (bannerFile) {
-        bannerURL = await uploadFileToFirebase(bannerFile, "images");
+        bannerURL = await uploadFileToCloudinary(bannerFile, "images");
       }
 
       if (pdfFile) {
-        pdfURL = await uploadFileToFirebase(pdfFile, "pdfs");
+        pdfURL = await uploadFileToCloudinary(pdfFile, "pdfs");
       }
 
       for (const video of selectedVideos) {
@@ -255,7 +242,7 @@ function UpdateCourse() {
             videoFileUrl: "",
           });
         } else if (video.videoFile) {
-          const videoURL = await uploadFileToFirebase(
+          const videoURL = await uploadFileToCloudinary(
             video.videoFile,
             "videos"
           );

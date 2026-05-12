@@ -1,8 +1,6 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
 import useAuthContext from "../../../hooks/useAuthContext";
-import { storage } from "../../../firebase/firebase"; // Firebase import
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 
@@ -74,41 +72,26 @@ const UpdateProfile = () => {
 
     try {
       if (selectedImage) {
-        const imgName = `${Date.now()}_${selectedImage.name}`;
-        const storageRef = ref(storage, `images/${imgName}`);
-        const uploadTask = uploadBytesResumable(storageRef, selectedImage);
-
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setUploadPerc(Math.round(progress));
-          },
-          (error) => {
-            console.error("Error uploading image: ", error);
-          },
-          async () => {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            updatedData.img = downloadURL;
-            await axios.patch(
-              `${baseUrl}/api/user/updateUser/${user?.user?._id}`,
-              updatedData,
-              { withCredentials: true }
-            );
-            setLoading(false);
-            navigate("/profile");
-          }
-        );
-      } else {
-        await axios.patch(
-          `${baseUrl}/api/user/updateUser/${user?.user?._id}`,
-          updatedData,
-          { withCredentials: true }
-        );
-        setLoading(false);
-        navigate("/profile");
+        const formData = new FormData();
+        formData.append("file", selectedImage);
+        formData.append("folder", "images");
+        const uploadRes = await fetch(`${baseUrl}/api/upload`, {
+          method: "POST",
+          body: formData,
+        });
+        if (!uploadRes.ok) throw new Error("Upload failed");
+        const { url: downloadURL } = await uploadRes.json();
+        setUploadPerc(100);
+        updatedData.img = downloadURL;
       }
+
+      await axios.patch(
+        `${baseUrl}/api/user/updateUser/${user?.user?._id}`,
+        updatedData,
+        { withCredentials: true }
+      );
+      setLoading(false);
+      navigate("/profile");
     } catch (error) {
       console.error("There was an error updating the profile!", error);
       setLoading(false);

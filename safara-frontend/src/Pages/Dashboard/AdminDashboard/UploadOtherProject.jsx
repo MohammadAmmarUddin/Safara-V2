@@ -1,17 +1,7 @@
 import { useState, useEffect } from "react";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  updateDoc,
-} from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Helmet } from "react-helmet";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
-import { db, storage } from "../../../firebase/firebase";
 import { FaEdit, FaTrash } from "react-icons/fa";
 
 const UploadOtherProject = () => {
@@ -25,12 +15,13 @@ const UploadOtherProject = () => {
   const [editImg, setEditImg] = useState(null);
 
   const navigate = useNavigate();
+  const baseUrl = import.meta.env.VITE_SAFARA_baseUrl;
 
-  // 🔹 Fetch all projects from Firestore
   const fetchProjects = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "otherProjects"));
-      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const res = await fetch(`${baseUrl}/api/other-projects`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
       setProjects(data);
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -42,7 +33,6 @@ const UploadOtherProject = () => {
     fetchProjects();
   }, []);
 
-  // 🔹 Upload or Update Project
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -55,48 +45,34 @@ const UploadOtherProject = () => {
 
     try {
       if (file) {
-        // ✅ sanitize file name (remove spaces)
-        const sanitizedFileName = file.name.replace(/\s+/g, "_");
-        const storageRef = ref(
-          storage,
-          `otherProjects/${Date.now()}_${sanitizedFileName}`
-        );
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        await new Promise((resolve, reject) => {
-          uploadTask.on(
-            "state_changed",
-            (snapshot) => {
-              const percent =
-                (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              setProgress(Math.round(percent));
-            },
-            (err) => reject(err),
-            async () => {
-              imageUrl = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve();
-            }
-          );
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", "otherProjects");
+        const uploadRes = await fetch(`${baseUrl}/api/upload`, {
+          method: "POST",
+          body: formData,
         });
+        if (!uploadRes.ok) throw new Error("Upload failed");
+        const data = await uploadRes.json();
+        imageUrl = data.url;
       }
+
+      const payload = { title, description, img: imageUrl || "" };
 
       if (editId) {
-        await updateDoc(doc(db, "otherProjects", editId), {
-          title,
-          description,
-          img: imageUrl,
-          updatedAt: new Date(),
+        await fetch(`${baseUrl}/api/other-projects/${editId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
       } else {
-        await addDoc(collection(db, "otherProjects"), {
-          title,
-          description,
-          img: imageUrl || "",
-          createdAt: new Date(),
+        await fetch(`${baseUrl}/api/other-projects`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
       }
 
-      // ✅ Reset form
       setTitle("");
       setDescription("");
       setFile(null);
@@ -121,16 +97,14 @@ const UploadOtherProject = () => {
     }
   };
 
-  // 🔹 Edit Project
   const handleEdit = (project) => {
-    setEditId(project.id);
+    setEditId(project._id);
     setTitle(project.title);
     setDescription(project.description);
     setEditImg(project.img);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // 🔹 Delete Project
   const handleDelete = async (id) => {
     Swal.fire({
       title: "Are you sure?",
@@ -143,7 +117,9 @@ const UploadOtherProject = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await deleteDoc(doc(db, "otherProjects", id));
+          await fetch(`${baseUrl}/api/other-projects/${id}`, {
+            method: "DELETE",
+          });
           Swal.fire("Deleted!", "The project has been deleted.", "success");
           fetchProjects();
         } catch (err) {
