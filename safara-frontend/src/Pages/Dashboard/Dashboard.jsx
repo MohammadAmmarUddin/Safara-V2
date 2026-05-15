@@ -1,8 +1,13 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "../../Components/Sidebar";
 import DashNavbar from "./UserDashboard/DashNavbar";
+import useAuth from "../../hooks/useAuthContext";
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const localStorageUser = JSON.parse(localStorage.getItem('user'));
+  const effectiveRole = user?.user?.role || localStorageUser?.user?.role || "user";
+
   return (
     <div className="flex min-h-screen bg-gray-50/50">
       <Sidebar />
