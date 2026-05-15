@@ -68,6 +68,9 @@ const AdminWhatsApp = lazy(() =>
 const SystemHealth = lazy(() =>
   import("../Pages/Dashboard/AdminDashboard/SystemHealth")
 );
+const GoogleMeet = lazy(() =>
+  import("../Pages/Dashboard/AdminDashboard/GoogleMeet")
+);
 const ErrorPage = lazy(() => import("../Pages/ErrorPage"));
 
 // 💡 Helper to wrap lazy-loaded components safely
@@ -140,6 +143,10 @@ export const router = createBrowserRouter([
       {
         path: "/dashboard/admin/systemHealth",
         element: Lazy(SystemHealth),
+      },
+      {
+        path: "/dashboard/admin/google-meet",
+        element: Lazy(GoogleMeet),
       },
     ],
   },
