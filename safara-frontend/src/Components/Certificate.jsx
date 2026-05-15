@@ -12,46 +12,44 @@ const Certificate = () => {
   const navigate = useNavigate();
   const { courseTitle, studentId } = state || {};
 
-  if (!courseTitle) {
-    navigate("/dashboard/user", { replace: true });
-    return null;
-  }
-
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState([]);
-  // const [score, setScore] = useState(0);
 
   const baseUrl = import.meta.env.VITE_SAFARA_baseUrl;
 
   useEffect(() => {
+    if (!courseTitle) {
+      navigate("/dashboard/user", { replace: true });
+      return;
+    }
+
     const fetchCourses = async () => {
       try {
         const res = await fetch(
           `${baseUrl}/api/course/getAllEnrolledCourse/${studentId}`
         );
         const data = await res.json();
-        console.log("data", data);
         setCourses(data.courses || []);
-      } catch (e) {
+      } catch {
         setCourses([]);
       } finally {
         setLoading(false);
       }
     };
     fetchCourses();
-  }, [studentId, baseUrl]);
+  }, [courseTitle, studentId, baseUrl, navigate]);
 
   const score = useMemo(() => {
     return (
       courses
         .find(
           (c) =>
-            c.title?.trim().toLowerCase() === courseTitle.trim().toLowerCase()
+            c.title?.trim().toLowerCase() === courseTitle?.trim().toLowerCase()
         )
         ?.students?.find((s) => s.studentsId === studentId)?.quizMarks ?? 0
     );
   }, [courses, courseTitle, studentId]);
-  console.log(score);
+
   const download = useCallback(() => {
     if (!ref.current) return;
     toPng(ref.current, { cacheBust: true }).then((dataUrl) => {
@@ -61,14 +59,17 @@ const Certificate = () => {
       link.click();
     });
   }, []);
+
   const percent = Math.max(0, Math.min(100, (score - 1) * 10));
-  let currentDate = new Date().toJSON().slice(0, 10);
-  if (loading)
+  const currentDate = new Date().toJSON().slice(0, 10);
+
+  if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
         <span className="loading loading-spinner w-40 h-40 text-white"></span>
       </div>
     );
+  }
 
   return (
     <div className="flex flex-col items-center">

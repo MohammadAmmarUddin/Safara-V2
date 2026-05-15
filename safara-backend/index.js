@@ -16,6 +16,7 @@ const whatsappSettingsRoutes = require("./Routes/whatsappSettingsRoutes.js");
 const uploadRoutes = require("./Routes/uploadRoutes.js");
 const otherProjectRoutes = require("./Routes/otherProjectRoutes.js");
 const adminRoutes = require("./Routes/adminRoutes.js");
+const googleMeetRoutes = require("./Routes/googleMeetRoutes.js");
 
 const app = express();
 
@@ -112,6 +113,8 @@ app.use("/api/whatsapp-settings", whatsappSettingsRoutes);
 app.use("/api", uploadRoutes);
 app.use("/api/other-projects", otherProjectRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/google-meet", googleMeetRoutes);
+app.use("/auth/google-meet", googleMeetRoutes);
 
 /* ================================
    ✅ Global Error Handler (production safe)
