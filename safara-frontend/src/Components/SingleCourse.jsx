@@ -10,12 +10,8 @@ import {
   FaStar,
   FaStarHalfAlt,
   FaWhatsapp,
-  FaYoutube,
-  FaUpload,
-  FaCheckCircle,
   FaTimesCircle,
   FaHourglassHalf,
-  FaMoneyBillWave,
 } from "react-icons/fa";
 import { PiExam } from "react-icons/pi";
 import Navbar from "./Navbar";
@@ -53,7 +49,6 @@ const SingleCourse = () => {
   const [showManualForm, setShowManualForm] = useState(false);
   const [manualPayMethod, setManualPayMethod] = useState("bkash");
   const [manualTransactionId, setManualTransactionId] = useState("");
-  const [manualSenderAccount, setManualSenderAccount] = useState("");
   const [manualAmountPaid, setManualAmountPaid] = useState("");
   const [manualProofImage, setManualProofImage] = useState(null);
   const [manualPaymentStatus, setManualPaymentStatus] = useState(null);
@@ -314,23 +309,25 @@ const SingleCourse = () => {
   };
 
   const fetchAllUsers = () => {
-    const url = `${baseUrl}/api/user/allUsers`;
+    const url = `${baseUrl}/api/user/allUsers?limit=1000`;
     fetch(url)
       .then((res) => res.json())
       .then((data) => {
-        setAllUsers(data);
+        const users = Array.isArray(data) ? data : (data.users || []);
+        setAllUsers(users);
       })
       .catch((error) => console.log(error));
   };
 
   useEffect(() => {
-    fetchSingleCourse();
-    fetchAllUsers();
-    // NEW FEATURE: Fetch payment settings
-    fetch(`${baseUrl}/api/payment-settings`)
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => setPaymentSettings(data))
-      .catch(() => {});
+    if (id) {
+      fetchSingleCourse();
+      fetchAllUsers();
+      fetch(`${baseUrl}/api/payment-settings`)
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => setPaymentSettings(data))
+        .catch(() => {});
+    }
   }, [id]);
 
   useEffect(() => {

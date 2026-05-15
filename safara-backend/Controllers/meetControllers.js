@@ -1,7 +1,7 @@
 const { google } = require("googleapis");
 const nodemailer = require("nodemailer");
 require("dotenv").config();
-const { getValidAuth } = require("./adminController.js");
+const { getValidMeetAuth } = require("../Controllers/googleMeetController.js");
 
 const createMeet = async (req, res) => {
   const { summary, startTime, endTime } = req.body;
@@ -19,7 +19,7 @@ const createMeet = async (req, res) => {
   }
 
   try {
-    const auth = await getValidAuth();
+    const auth = await getValidMeetAuth();
     const calendar = google.calendar({ version: "v3", auth });
 
     const startDateTime = new Date(startTime);
