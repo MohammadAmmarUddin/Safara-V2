@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { FaBookOpen, FaCertificate } from "react-icons/fa";
 import { TbCurrencyTaka } from "react-icons/tb";
 import useAuthContext from "../../../hooks/useAuthContext";
@@ -13,56 +13,60 @@ const UserHome = () => {
 
   const { user } = useAuthContext();
   const baseUrl = import.meta.env.VITE_SAFARA_baseUrl;
+  const userId = user?.user?._id;
 
-  const fetchTotalSpent = () => {
-    fetch(`${baseUrl}/api/course/getSpentByStudent/${user?.user?._id}`)
+  const fetchTotalSpent = useCallback(() => {
+    if (!userId) return;
+    fetch(`${baseUrl}/api/course/getSpentByStudent/${userId}`)
       .then((res) => res.json())
-      .then((data) => setTotalSpent(data.totalPayment))
-      .catch((error) => console.log(error));
-  };
+      .then((data) => setTotalSpent(data.totalPayment || 0))
+      .catch(() => setTotalSpent(0));
+  }, [baseUrl, userId]);
 
-  const fetchEnrolledCourses = () => {
-    fetch(`${baseUrl}/api/course/getAllEnrolledCourse/${user?.user?._id}`)
+  const fetchEnrolledCourses = useCallback(() => {
+    if (!userId) return;
+    fetch(`${baseUrl}/api/course/getAllEnrolledCourse/${userId}`)
       .then((res) => res.json())
       .then((data) => {
-        setTotalEnrolledCourses(data.courses.length);
-        setCoursesByStudent(data.courses);
+        const courses = data.courses || [];
+        setTotalEnrolledCourses(courses.length);
+        setCoursesByStudent(courses);
 
-        const completedCourses = data.courses.reduce((count, course) => {
-          const studentData = course.students.find(
-            (student) => student.studentsId === user.user._id
+        const completedCourses = courses.reduce((count, course) => {
+          const studentData = course.students?.find(
+            (student) => student.studentsId === userId
           );
           return count + (studentData?.isCourseComplete ? 1 : 0);
         }, 0);
         setCertificateEarned(completedCourses);
       })
-      .catch((error) => console.log(error));
-  };
+      .catch(() => {
+        setCoursesByStudent([]);
+        setTotalEnrolledCourses(0);
+      });
+  }, [baseUrl, userId]);
 
   useEffect(() => {
-    if (user) {
-      fetchTotalSpent();
-      fetchEnrolledCourses();
-    }
-  }, [user]);
+    fetchTotalSpent();
+    fetchEnrolledCourses();
+  }, [fetchTotalSpent, fetchEnrolledCourses]);
+
+  const userName = user?.user?.firstname 
+    ? `${user.user.firstname}${user?.user?.lastname ? ' ' + user.user.lastname : ''}`
+    : "User";
 
   return (
     <div className="min-h-screen lg:p-8 pt-5 bg-gray-50">
-      {/* Helmet for SEO + Page Title */}
       <Helmet>
-        <title>
-          User Dashboard | {user?.user?.name || "Student"} | Mahad LMS
-        </title>
+        <title>User Dashboard | {userName} | Safara Learning</title>
         <meta
           name="description"
-          content={`Welcome ${
-            user?.user?.name || "student"
-          }! View your enrolled courses, progress, certificates, and total spent.`}
+          content={`Welcome ${userName}! View your enrolled courses, progress, certificates, and total spent.`}
         />
       </Helmet>
 
       <h1 className="text-3xl font-bold text-primary mb-8">
-        Welcome, {user?.user?.name || "User"}!
+        Welcome, {userName}!
       </h1>
 
       {/* User Stats */}
@@ -95,13 +99,17 @@ const UserHome = () => {
           Your Courses Progress
         </h2>
         <div className="space-y-4">
-          {coursesByStudent.map((course) => (
-            <CourseProgressCard
-              key={course._id}
-              course={course}
-              userId={user.user._id}
-            />
-          ))}
+          {coursesByStudent.length > 0 ? (
+            coursesByStudent.map((course) => (
+              <CourseProgressCard
+                key={course._id}
+                course={course}
+                userId={userId}
+              />
+            ))
+          ) : (
+            <p className="text-center text-gray-500 py-4">No courses enrolled yet.</p>
+          )}
         </div>
       </div>
     </div>
