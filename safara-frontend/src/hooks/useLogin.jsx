@@ -1,49 +1,56 @@
 import { useState } from "react";
 import useAuth from "./useAuthContext";
 import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom";
 
 export const useLogin = () => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const { dispatch } = useAuth();
 
   const login = async (email, password) => {
     setError(null);
     setIsLoading(true);
-    const baseUrl = import.meta.env.VITE_SAFARA_baseUrl;
+    
     try {
+      const baseUrl = import.meta.env.VITE_SAFARA_baseUrl;
       const response = await fetch(`${baseUrl}/api/user/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+      
       const json = await response.json();
-      console.log("Response from server:", json);
 
       if (!response.ok) {
-        setError(json.error || "An error occurred during login.");
+        const errorMsg = json.error || "Login failed. Please check your credentials.";
+        setError(errorMsg);
         Swal.fire({
-          position: "center",
           icon: "error",
-          title: json.error || "Something went wrong. Please try again later.",
-          showConfirmButton: true,
+          title: "Login Failed",
+          text: errorMsg,
+          confirmButtonColor: "#125ca6",
         });
+        return null;
+      }
+
+      if (!json.user) {
+        setError("Invalid response from server.");
         return null;
       }
 
       localStorage.setItem("user", JSON.stringify(json));
       dispatch({ type: "LOGIN", payload: json });
+      
       return json;
     } catch (err) {
       console.error("Login error:", err);
-      setError("Something went wrong. Please try again later.");
+      const errorMsg = "Network error. Please check your connection.";
+      setError(errorMsg);
       Swal.fire({
-        position: "center",
         icon: "error",
-        title: "Something went wrong. Please try again later.",
-        showConfirmButton: true,
+        title: "Connection Error",
+        text: errorMsg,
+        confirmButtonColor: "#125ca6",
       });
       return null;
     } finally {
@@ -54,8 +61,9 @@ export const useLogin = () => {
   const googleLogin = async (userData) => {
     setError(null);
     setIsLoading(true);
-    const baseUrl= import.meta.env.VITE_SAFARA_baseUrl;
+    
     try {
+      const baseUrl = import.meta.env.VITE_SAFARA_baseUrl;
       const response = await fetch(`${baseUrl}/api/user/googleLogin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -63,36 +71,28 @@ export const useLogin = () => {
       });
 
       const json = await response.json();
-      console.log("Google login response from server:", json);
 
       if (!response.ok) {
-        throw new Error(json.error || "An error occurred during Google login.");
+        throw new Error(json.error || "Google login failed.");
       }
 
-      // Store user data and token
+      if (!json.user) {
+        throw new Error("Invalid response from server.");
+      }
+
       localStorage.setItem("user", JSON.stringify(json));
       dispatch({ type: "LOGIN", payload: json });
-
-      // Handle navigation based on role
-      if (json?.user?.role === "school-owner") {
-        navigate("/dashboard");
-      } else if (json?.user?.role === "teacher") {
-        navigate("/teacherDashboard");
-      } else {
-        navigate("/");
-      }
-
+      
       return true;
     } catch (err) {
       console.error("Google login error:", err);
-      setError(err.message || "Something went wrong with Google login.");
+      const errorMsg = err.message || "Something went wrong with Google login.";
+      setError(errorMsg);
       Swal.fire({
-        position: "center",
         icon: "error",
-        title:
-          err.message ||
-          "Something went wrong with Google login. Please try again later.",
-        showConfirmButton: true,
+        title: "Google Login Failed",
+        text: errorMsg,
+        confirmButtonColor: "#125ca6",
       });
       return false;
     } finally {

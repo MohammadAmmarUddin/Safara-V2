@@ -20,128 +20,42 @@ const ManageCourses = () => {
   const fetchCourses = useCallback(() => {
     setLoading(true);
     fetch(`${baseUrl}/api/course/getAllCourses`)
-      .then((res) => res.json())
-      .then((data) => setCourses(data))
-      .catch((error) => console.error("Failed to fetch courses:", error))
-      .finally(() => setLoading(false));
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch");
+        return res.json();
+      })
+      .then((data) => {
+        setCourses(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch courses:", error);
+        setCourses([]);
+        setLoading(false);
+      });
   }, [baseUrl]);
 
   const fetchAllUsers = useCallback(() => {
     fetch(`${baseUrl}/api/user/allUsers`)
       .then((res) => res.json())
-      .then((data) => setAllUsers(data))
+      .then((data) => setAllUsers(data.users || []))
       .catch((error) => console.error("Failed to fetch users:", error));
   }, [baseUrl]);
 
-  useEffect(() => {
+useEffect(() => {
     fetchCourses();
     fetchAllUsers();
-  }, [fetchCourses, fetchAllUsers]);
-
-  // ✅ Memoized user lookup map — O(1) instead of O(n) on every render
-  const userMap = useMemo(() => {
-    return allUsers.reduce((acc, user) => {
-      acc[user._id] = `${user.firstname} ${user.lastname}`;
-      return acc;
-    }, {});
-  }, [allUsers]);
-
-  const getUserName = (userId) => userMap[userId] ?? "Unknown User";
-
-  const handleDelete = (id) => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#125ca6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        fetch(`${baseUrl}/api/course/deleteCourse/${id}`, { method: "DELETE" })
-          .then((res) => res.json())
-          .then(() => {
-            Swal.fire({
-              title: "Deleted!",
-              text: "The course has been deleted.",
-              icon: "success",
-              confirmButtonColor: "#125ca6",
-            });
-            fetchCourses();
-          })
-          .catch(() => {
-            Swal.fire({
-              title: "Error!",
-              text: "There was an error deleting the course.",
-              icon: "error",
-              confirmButtonColor: "#125ca6",
-            });
-          });
-      }
-    });
-  };
-
-  const openStudentsModal = (course) => {
-    setSelectedCourse(course);
-    setEnrolledStudents(course.students || []);
-    setShowStudentsModal(true);
-  };
-
-  const handleRemoveStudent = (courseId, studentId) => {
-    Swal.fire({
-      title: "Remove Student?",
-      text: "This student will lose access to the course.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#125ca6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, remove!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        fetch(`${baseUrl}/api/course/removeStudent/${courseId}/${studentId}`, {
-          method: "PATCH",
-        })
-          .then((res) => res.json())
-          .then(() => {
-            Swal.fire({
-              title: "Removed!",
-              text: "Student has been removed from the course.",
-              icon: "success",
-              confirmButtonColor: "#125ca6",
-            });
-            setEnrolledStudents((prev) =>
-              prev.filter((s) => s.studentsId !== studentId),
-            );
-          })
-          .catch(() => {
-            Swal.fire({
-              title: "Error!",
-              text: "Failed to remove student.",
-              icon: "error",
-              confirmButtonColor: "#125ca6",
-            });
-          });
-      }
-    });
-  };
-
-  const toggleDropdown = (id, e) => {
-    e.stopPropagation();
-    setVisibleDropdown((prev) => (prev === id ? null : id));
-  };
-
-  // ✅ Stable outside-click handler using useCallback
-  const handleOutsideClick = useCallback((e) => {
-    if (!e.target.closest(".dropdown-container")) {
-      setVisibleDropdown(null);
-    }
   }, []);
 
   useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest(".dropdown-container")) {
+        setVisibleDropdown(null);
+      }
+    };
     document.addEventListener("click", handleOutsideClick);
     return () => document.removeEventListener("click", handleOutsideClick);
-  }, [handleOutsideClick]);
+  }, []);
 
   return (
     <div className="lg:p-6 pt-10">
@@ -155,9 +69,11 @@ const ManageCourses = () => {
 
       <h1 className="text-3xl font-bold text-primary mb-8">Manage Courses</h1>
 
-      {/* ✅ Loading state */}
+      {/* Loading state */}
       {loading ? (
-        <p className="text-gray-500">Loading courses...</p>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+        </div>
       ) : courses.length === 0 ? (
         <p className="text-gray-500">No courses found.</p>
       ) : (

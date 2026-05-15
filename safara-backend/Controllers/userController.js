@@ -43,8 +43,7 @@ const createToken = (_id) => {
 };
 
 const signupUser = async (req, res) => {
-  const { firstname, lastname, email, phone, role, prevRole, img, password } =
-    req.body;
+  const { firstname, lastname, email, phone, img, password } = req.body;
 
   try {
     const user = await userModel.signup(
@@ -52,8 +51,8 @@ const signupUser = async (req, res) => {
       lastname,
       email,
       phone,
-      role,
-      prevRole,
+      "user",
+      null,
       img,
       password
     );
@@ -69,35 +68,31 @@ const signupUser = async (req, res) => {
 
 const googleLogin = async (req, res) => {
   try {
-    const { firstname, lastname, email, phone, role, prevRole, img } = req.body;
+    const { firstname, lastname, email, phone, img } = req.body;
 
     if (!email) {
       console.error("Missing email in request body:", req.body);
       return res.status(400).json({ error: "Email is required" });
     }
 
-    // Check if user exists
     let user = await userModel.findOne({ email });
     let isNewUser = false;
 
     if (!user) {
-      // Create new user if doesn't exist
       isNewUser = true;
       user = await userModel.create({
         firstname,
         lastname,
         email,
         phone,
-        role,
-        prevRole,
+        role: "user",
+        prevRole: null,
         img,
       });
     }
 
-    // Generate token
     const token = createToken(user._id);
 
-    // Return user data and token
     res.status(200).json({
       user: {
         ...user.toObject(),
@@ -113,7 +108,6 @@ const googleLogin = async (req, res) => {
 
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
-  console.log("email pas", email, password);
   try {
     const user = await userModel.login(email, password);
     // Detect the device type
@@ -130,8 +124,51 @@ const loginUser = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    const users = await userModel.find({});
-    res.status(200).json(users);
+    const {
+      page = 1,
+      limit = 12,
+      search = "",
+      sortBy = "createdAt",
+      order = "desc"
+    } = req.query;
+
+    const query = {};
+
+    // Search across multiple fields
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      query.$or = [
+        { firstname: searchRegex },
+        { lastname: searchRegex },
+        { email: searchRegex },
+        { phone: searchRegex },
+        { role: searchRegex },
+        { address: searchRegex },
+      ];
+    }
+
+    const totalUsers = await userModel.countDocuments(query);
+    const totalPages = Math.ceil(totalUsers / limit);
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const users = await userModel
+      .find(query)
+      .select("-password")
+      .sort({ [sortBy]: order === "asc" ? 1 : -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.status(200).json({
+      users,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalUsers,
+        usersPerPage: parseInt(limit),
+        hasNextPage: parseInt(page) < totalPages,
+        hasPrevPage: parseInt(page) > 1,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

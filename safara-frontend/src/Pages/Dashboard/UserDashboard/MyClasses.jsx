@@ -1,42 +1,36 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { Helmet } from "react-helmet"; // ✅ Helmet import
+import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import "react-tabs/style/react-tabs.css";
 import useAuthContext from "../../../hooks/useAuthContext";
 
 const MyClasses = () => {
-  const categories = ["My Classes", "Explore", "Incoming", "Course Details"];
-  const { category } = useParams();
   const { user } = useAuthContext();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const initialIndex = categories.indexOf(category);
 
   const baseUrl = import.meta.env.VITE_SAFARA_baseUrl;
+  const userId = user?.user?._id;
 
-  const fetchCourses = () => {
+  const fetchCourses = useCallback(() => {
+    if (!userId) return;
     setLoading(true);
-    const url = `${baseUrl}/api/course/getAllEnrolledCourse/${user?.user?._id}`;
+    const url = `${baseUrl}/api/course/getAllEnrolledCourse/${userId}`;
     fetch(url)
       .then((res) => res.json())
       .then((data) => {
-        setCourses(data.courses || []); // safe fallback
+        setCourses(data.courses || []);
         setLoading(false);
       })
-      .catch((error) => {
-        console.error("Error fetching courses:", error);
+      .catch(() => {
         setCourses([]);
         setLoading(false);
       });
-  };
+  }, [baseUrl, userId]);
 
   useEffect(() => {
-    if (user?.user?._id) {
-      fetchCourses();
-    } else {
-      console.log("User is not authenticated.");
-    }
-  }, [user]);
+    fetchCourses();
+  }, [fetchCourses]);
 
   if (loading) {
     return (
@@ -48,29 +42,32 @@ const MyClasses = () => {
 
   return (
     <div className="lg:p-6 pt-10">
-      {/* ✅ Helmet for SEO */}
       <Helmet>
-        <title>My Classes - Mahad</title>
+        <title>My Classes - Safara Learning</title>
         <meta
           name="description"
-          content="View and manage all your enrolled courses at Mahad. Access class details, explore incoming lessons, and continue your learning journey."
+          content="View and manage all your enrolled courses. Access class details, explore incoming lessons, and continue your learning journey."
         />
       </Helmet>
 
       <div className="grid lg:grid-cols-5 md:grid-cols-3 grid-cols-1 gap-5 w-fit">
-        {courses?.map((course) => (
-          <div key={course._id} className="border rounded-xl relative">
-            <Link to={`/singleCourse/${course?._id}`}>
-              <div>
-                <img
-                  className="w-full object-cover rounded-xl"
-                  src={course?.banner}
-                  alt={course?.title}
-                />
-              </div>
-            </Link>
-          </div>
-        ))}
+        {courses?.length > 0 ? (
+          courses.map((course) => (
+            <div key={course._id} className="border rounded-xl relative">
+              <Link to={`/singleCourse/${course?._id}`}>
+                <div>
+                  <img
+                    className="w-full object-cover rounded-xl"
+                    src={course?.banner}
+                    alt={course?.title}
+                  />
+                </div>
+              </Link>
+            </div>
+          ))
+        ) : (
+          <p className="text-gray-500">No courses enrolled yet.</p>
+        )}
       </div>
     </div>
   );
