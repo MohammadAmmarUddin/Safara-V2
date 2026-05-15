@@ -3,7 +3,7 @@ import useAuthContext from "../../../hooks/useAuthContext";
 import { useState } from "react";
 import axios from "axios";
 import { Rating } from "@smastrom/react-rating";
-import { Helmet } from "react-helmet"; // ✅ Import Helmet
+import { Helmet } from "react-helmet";
 
 const AddReview = () => {
   const [rating, setRating] = useState(0);
@@ -14,7 +14,9 @@ const AddReview = () => {
     e.preventDefault();
 
     const form = e.target;
-    const name = user?.displayName;
+    const firstname = user?.user?.firstname || "";
+    const lastname = user?.user?.lastname || "";
+    const name = `${firstname} ${lastname}`.trim() || "Anonymous";
     const liked = form.liked.value;
     const suggestion = form.suggestion.value;
     const details = form.message.value;
@@ -36,9 +38,8 @@ const AddReview = () => {
 
   return (
     <div>
-      {/* ✅ Helmet for page title and meta description */}
       <Helmet>
-        <title>Rate Us - Mahad</title>
+        <title>Rate Us - Safara Learning</title>
         <meta
           name="description"
           content="Submit your feedback and rate our courses. Your opinion helps us improve!"

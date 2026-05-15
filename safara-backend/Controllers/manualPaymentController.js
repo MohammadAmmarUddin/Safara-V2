@@ -235,10 +235,44 @@ const getStudentManualPaymentStatus = async (req, res) => {
   }
 };
 
+// Admin: Delete a manual payment
+const deleteManualPayment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const submission = await ManualPaymentSubmission.findById(id);
+    if (!submission) {
+      return res.status(404).json({ message: "Payment submission not found." });
+    }
+
+    // Remove from course student record
+    await courseModel.findOneAndUpdate(
+      {
+        _id: submission.courseId,
+        "students.studentsId": submission.userId,
+      },
+      {
+        $pull: {
+          students: { paymentId: id },
+        },
+      }
+    );
+
+    // Delete the submission
+    await ManualPaymentSubmission.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Payment submission deleted successfully." });
+  } catch (error) {
+    console.error("Error in deleteManualPayment:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   submitManualPayment,
   getManualPaymentRequests,
   approveManualPayment,
   declineManualPayment,
   getStudentManualPaymentStatus,
+  deleteManualPayment,
 };

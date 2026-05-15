@@ -2,60 +2,40 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useLogin } from "../hooks/useLogin";
 import { FcGoogle } from "react-icons/fc";
-import { FaAngleLeft } from "react-icons/fa6";
+import { FaEye, FaEyeSlash, FaGraduationCap } from "react-icons/fa";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import app from "../firebase/firebase";
-import DOMPurify from "dompurify";
 
-// Initialize Firebase Authentication
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, googleLogin, error: loginError, isLoading } = useLogin();
+  const { login, googleLogin, isLoading } = useLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  // Helper function to sanitize email and password inputs
-  const sanitizeInput = (input) => {
-    return DOMPurify.sanitize(input.trim()); // Trimming and sanitizing input
-  };
-
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Sanitize email and password
-    const sanitizedEmail = sanitizeInput(email);
-    const sanitizedPassword = sanitizeInput(password);
-
-    if (!sanitizedEmail || !sanitizedPassword) {
+    if (!email || !password) {
       setError("Please fill in all required fields");
       return;
     }
 
     try {
-      const userData = await login(sanitizedEmail, sanitizedPassword);
+      const userData = await login(email, password);
       if (userData) {
-        if (userData.user.role === "user") {
-          navigate("/dashboard/user/userHome");
-        } else if (userData.user.role === "admin") {
-          navigate("/dashboard/admin/adminHome");
-        } else {
-          navigate("/");
-        }
+        navigate("/");
       }
     } catch (err) {
-      setError(
-        DOMPurify.sanitize(err.message || "Login failed. Please try again.")
-      );
+      setError(err.message || "Login failed. Please try again.");
     }
   };
 
-  // Handle Google Login
   const handleGoogleLogin = async () => {
     try {
       setError("");
@@ -73,102 +53,127 @@ const Login = () => {
         lastname: user.displayName?.split(" ")[1] || "Unknown",
         email: user.email,
         phone: user.phoneNumber || randomPhone.toString(),
-        role: "user",
-        prevRole: "user",
         img: user.photoURL || "",
       };
 
       await googleLogin(userData);
+      navigate("/");
     } catch (error) {
-      console.error("Google login error:", error);
-      setError(
-        DOMPurify.sanitize(
-          error.message || "Google login failed. Please try again."
-        )
-      );
+      setError(error.message || "Google login failed. Please try again.");
     }
   };
 
   return (
-    <div className="mt-20">
-      <Link
-        to={"/"}
-        className="flex items-center gap-2 font-semibold lg:w-3/4 md:11/12 mx-auto text-xl pb-10"
-      >
-        <FaAngleLeft />
-        <p>Go back to home</p>
-      </Link>
-      <h2 className="text-center text-4xl font-semibold text-primary pb-5">
-        LOGIN
-      </h2>
-      <form
-        onSubmit={handleSubmit}
-        className="md:w-1/4 w-11/12 mx-auto border rounded-md p-10"
-      >
-        {(error || loginError) && (
-          <p
-            className="text-red-500 mb-4"
-            dangerouslySetInnerHTML={{
-              __html: DOMPurify.sanitize(error || loginError), // Sanitizing the error message
-            }}
-          />
-        )}
-        <div className="form-control">
-          <label>Email</label>
-          <input
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="input input-bordered focus:ring-2 focus:ring-primary focus:border-primary rounded-md border hover:border-primary transition-all"
-            required
-          />
-        </div>
-        <div className="form-control mt-4">
-          <label>Password</label>
-          <input
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="input input-bordered focus:ring-2 focus:ring-primary focus:border-primary rounded-md border hover:border-primary transition-all"
-            required
-          />
-          <label className="mt-4">
-            <Link to="/forgetPassword">Forgot password?</Link>
-          </label>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex items-center justify-center mb-8">
+          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+            <FaGraduationCap className="text-white text-2xl" />
+          </div>
+          <span className="ml-3 text-2xl font-bold text-gray-800">Safara</span>
         </div>
 
-        <div className="form-control mt-6">
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="flex items-center justify-center mb-6">
+            <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-primary transition-colors text-sm">
+              <span>←</span>
+              <span>Back to Home</span>
+            </Link>
+          </div>
+          <h1 className="text-2xl font-semibold text-gray-900 text-center mb-2">Sign in</h1>
+          <p className="text-gray-500 text-sm text-center mb-8">to continue to Safara Learning</p>
+
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <span className="text-red-600 text-sm">{error}</span>
+            </div>
+          )}
+
+          {/* Google Button - Prominent at top */}
           <button
-            type="submit"
-            className="bg-primary py-3 rounded-md text-white transition-all hover:bg-[#0a4a6f] hover:border-[#0a4a6f] border-2"
+            type="button"
+            onClick={handleGoogleLogin}
+            className="w-full py-3 px-4 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 flex items-center justify-center gap-3 font-medium text-gray-700 transition-all shadow-sm hover:shadow-md"
             disabled={isLoading}
           >
-            {isLoading ? "Logging in..." : "Login"}
+            <FcGoogle className="text-2xl" />
+            <span>Continue with Google</span>
           </button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px bg-gray-200"></div>
+            <span className="text-sm text-gray-400">or</span>
+            <div className="flex-1 h-px bg-gray-200"></div>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <input
+                type="email"
+                placeholder="Email or phone"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-base"
+                required
+              />
+            </div>
+
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-base"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+
+            {/* Forgot Password */}
+            <div className="text-right">
+              <Link to="/forgetPassword" className="text-sm text-primary hover:text-primary/80 font-medium">
+                Forgot password?
+              </Link>
+            </div>
+
+            {/* Sign In Button */}
+            <button
+              type="submit"
+              className="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 text-base"
+              disabled={isLoading}
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+
+          {/* Sign Up Link */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-600 text-sm">
+              Don't have an account?{" "}
+              <Link to="/signup" className="text-primary font-semibold hover:underline">
+                Create account
+              </Link>
+            </p>
+          </div>
         </div>
-        <p className="text-center pt-4">
-          Don&lsquo;t have an account?
-          <Link
-            to="/signup"
-            className="text-primary transition-all hover:text-[#0a4a6f] hover:underline"
-          >
-            Sign up
-          </Link>
-        </p>
-        <button
-          onClick={handleGoogleLogin}
-          type="button"
-          className="border border-primary py-3 rounded-md w-full mt-4 flex items-center justify-center transition-all hover:bg-[#0a4a6f] hover:border-[#0a4a6f] hover:text-white"
-          disabled={isLoading}
-        >
-          <FcGoogle className="text-3xl mr-3" />
-          <span>
-            {isLoading ? "Logging in with Google..." : "Login with Google"}
-          </span>
-        </button>
-      </form>
+
+        {/* Footer */}
+        <div className="mt-6 text-center text-xs text-gray-400">
+          <p>Your data is secure and encrypted</p>
+        </div>
+      </div>
     </div>
   );
 };
