@@ -6,6 +6,12 @@ import {
   FaChartLine,
   FaStar,
   FaCheckCircle,
+  FaServer,
+  FaDatabase,
+  FaEnvelope,
+  FaCloud,
+  FaCreditCard,
+  FaCheck,
 } from "react-icons/fa";
 import { TbCurrencyTaka } from "react-icons/tb";
 import { Helmet } from "react-helmet";
@@ -72,7 +78,7 @@ const AdminDashboard = () => {
 
       <div className="mb-6">
         <h1 className="text-2xl sm:text-2xl md:text-3xl font-bold text-primary">Admin Dashboard</h1>
-        <p className="text-gray-500 text-sm mt-1">Welcome back! Here's your platform overview.</p>
+        <p className="text-gray-500 text-sm mt-1">Welcome back! Here&apos;s your platform overview.</p>
       </div>
 
       {/* Stats Cards */}
@@ -110,7 +116,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
         {/* Course Categories */}
         <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5 md:p-6">
           <h2 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800 mb-4 sm:mb-5">Course Categories</h2>
@@ -133,10 +139,10 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Platform Overview */}
+        {/* Platform Overview & System Health */}
         <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5 md:p-6">
           <h2 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800 mb-4 sm:mb-5">Platform Overview</h2>
-          <div className="grid grid-cols-2 gap-4 sm:gap-5">
+          <div className="grid grid-cols-2 gap-4 sm:gap-5 mb-5">
             <MetricCard 
               icon={<FaStar className="text-yellow-500" />} 
               title="Avg Rating" 
@@ -150,8 +156,50 @@ const AdminDashboard = () => {
               suffix="courses"
             />
           </div>
+
+          {/* System Health Status */}
+          <div className="border-t border-gray-100 pt-4">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <FaServer className="text-primary" />
+              System Health
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <FaDatabase className="text-green-500 text-sm" />
+                <span className="text-xs text-gray-600">MongoDB</span>
+                <FaCheck className="text-green-500 text-xs ml-auto" />
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <FaServer className="text-green-500 text-sm" />
+                <span className="text-xs text-gray-600">API</span>
+                <FaCheck className="text-green-500 text-xs ml-auto" />
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <FaEnvelope className="text-green-500 text-sm" />
+                <span className="text-xs text-gray-600">Email</span>
+                <FaCheck className="text-green-500 text-xs ml-auto" />
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <FaCloud className="text-green-500 text-sm" />
+                <span className="text-xs text-gray-600">Cloudinary</span>
+                <FaCheck className="text-green-500 text-xs ml-auto" />
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <FaCreditCard className="text-green-500 text-sm" />
+                <span className="text-xs text-gray-600">SSLCommerz</span>
+                <FaCheck className="text-green-500 text-xs ml-auto" />
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <FaCreditCard className="text-green-500 text-sm" />
+                <span className="text-xs text-gray-600">Manual Pay</span>
+                <FaCheck className="text-green-500 text-xs ml-auto" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      
     </div>
   );
 };

@@ -75,94 +75,66 @@ userSchema.statics.signup = async function (
   lastname,
   email,
   phone,
-  role,
-  prevRole,
+  role = "user",
+  prevRole = null,
   img,
   password
 ) {
-  const exist = await this.findOne({ email });
-  console.log(password);
+  const emailExist = await this.findOne({ email });
+  if (emailExist) {
+    throw Error("This email is already registered");
+  }
 
-  if (exist) {
-    if (!password) return exist;
-    throw Error("Email already exists.!.");
+  const phoneExist = await this.findOne({ phone });
+  if (phoneExist) {
+    throw Error("This phone number is already registered");
   }
 
   if (!firstname || !lastname || !email || !phone) {
-    throw Error("Required fields must be filled...");
+    throw Error("Required fields must be filled");
   }
 
   if (!validator.isEmail(email)) {
-    throw Error("Not a valid email.!.");
+    throw Error("Invalid email format");
   }
 
   if (password && !validator.isStrongPassword(password)) {
-    throw Error("Password is not strong enough.!.");
+    throw Error("Password must be at least 8 characters with uppercase, lowercase, number and symbol");
   }
 
-  if (password) {
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(password, salt);
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(password, salt);
 
-    const user = await this.create({
-      firstname,
-      lastname,
-      email,
-      phone,
-      role,
-      prevRole,
-      img,
-      password: hash,
-    });
+  const user = await this.create({
+    firstname,
+    lastname,
+    email,
+    phone,
+    role,
+    prevRole,
+    img,
+    password: hash,
+  });
 
-    return user;
-  } else {
-    const user = await this.create({
-      firstname,
-      lastname,
-      email,
-      phone,
-      role,
-      prevRole,
-      img,
-      password,
-    });
-
-    return user;
-  }
+  return user;
 };
 
 userSchema.statics.login = async function (email, password) {
-  if (password) {
     if (!password || !email) {
-      throw Error("All fields must be filled...");
+      throw Error("Please fill in all fields");
     }
 
     const user = await this.findOne({ email });
     if (!user) {
-      throw Error("Incorrect Email.!.");
+      throw Error("Email not found. Please sign up first.");
     }
 
     const match = await bcrypt.compare(password, user.password);
-    console.log(user.password, password, match); // fixed typo
-
     if (!match) {
-      throw Error("Incorrect password.!.");
+      throw Error("Incorrect password. Please try again.");
     }
 
     return user;
-  } else {
-    if (!email) {
-      throw Error("All fields must be filled...");
-    }
-
-    const user = await this.findOne({ email });
-    if (!user) {
-      throw Error("Incorrect Email.!.");
-    }
-
-    return user;
-  }
 };
 
 const user = mongoose.model("userCollection", userSchema);

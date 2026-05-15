@@ -26,7 +26,7 @@ const DashNavbar = () => {
             <h1 className="text-base sm:text-lg font-semibold text-gray-900 tracking-tight">
               Welcome back, <span className="text-primary">{user?.user?.firstname} {user?.user?.lastname}</span>
             </h1>
-            <p className="text-xs text-gray-400 mt-0.5 hidden sm:block">Here's what's happening with your courses today.</p>
+            <p className="text-xs text-gray-400 mt-0.5 hidden sm:block">Here&apos;s what&apos;s happening with your courses today.</p>
           </div>
         </div>
 
