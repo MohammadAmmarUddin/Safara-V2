@@ -19,7 +19,7 @@ const AllCourses = () => {
   }, []);
 
   return (
-    <div className="w-3/4 mx-auto pb-20">
+    <div className="w-11/12 sm:w-3/4 mx-auto pb-20">
       <Helmet>
         <title>All Courses - Safara</title>
         <meta
@@ -33,20 +33,25 @@ const AllCourses = () => {
         />
       </Helmet>
 
-      <div className="grid lg:grid-cols-5 md:grid-cols-3 grid-cols-1 gap-5 w-fit">
+      <h2 className="text-2xl sm:text-3xl font-bold text-primary mb-6 text-center">All Courses</h2>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
         {courses?.map((course) => (
           <div
             key={course._id}
-            className="border rounded-xl relative hover:shadow-lg transition-shadow duration-300"
+            className="border rounded-xl relative hover:shadow-lg transition-shadow duration-300 overflow-hidden"
           >
-            <Link to={`/singleCourse/${course?._id}`}>
+            <Link to={`/singleCourse/${course?._id}`} className="block">
               <img
-                className="w-full object-cover rounded-xl"
+                className="w-full h-40 sm:h-48 object-cover"
                 src={course?.banner}
                 alt={course?.title}
               />
-              <div className="absolute bottom-3 left-3 bg-black bg-opacity-50 text-white px-2 py-1 rounded">
-                {course?.title}
+              <div className="p-3 sm:p-4">
+                <h3 className="font-medium text-sm sm:text-base line-clamp-2">{course?.title}</h3>
+                {course?.price && (
+                  <p className="text-primary font-semibold mt-2">৳{course?.price}</p>
+                )}
               </div>
             </Link>
           </div>

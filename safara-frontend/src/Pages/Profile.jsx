@@ -72,12 +72,15 @@ const Profile = () => {
                     className="w-full h-full object-cover"
                     src={userData.img}
                     alt={fullName}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
                   />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-indigo-600">
-                    <MdPerson className="text-5xl text-white/80" />
-                  </div>
-                )}
+                ) : null}
+                <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-indigo-600 ${userData.img ? 'hidden' : ''}`}>
+                  <MdPerson className="text-5xl text-white/80" />
+                </div>
               </div>
             </div>
             <div className="flex-1 pt-16 sm:pt-0 sm:self-end">

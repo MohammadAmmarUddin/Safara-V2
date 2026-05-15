@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { IoMdDownload } from "react-icons/io";
 import {
@@ -109,7 +109,46 @@ const SingleCourse = () => {
       }
     }
   }, [courseData, userId]);
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const baseUrl = import.meta.env.VITE_SAFARA_baseUrl;
+
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    const tranId = searchParams.get("tran_id");
+    if (paymentStatus === "success" && tranId) {
+      Swal.fire({
+        icon: "success",
+        title: "Payment Successful!",
+        text: "Your payment was successful. You now have access to the course content.",
+        confirmButtonText: "OK",
+      });
+      sessionStorage.removeItem("lastRoute");
+    } else if (paymentStatus === "failed") {
+      Swal.fire({
+        icon: "error",
+        title: "Payment Failed",
+        text: "Your payment was not completed. Please try again.",
+        confirmButtonText: "OK",
+      });
+    } else if (paymentStatus === "cancelled") {
+      const lastRoute = sessionStorage.getItem("lastRoute");
+      Swal.fire({
+        icon: "warning",
+        title: "Payment Cancelled",
+        text: "You cancelled the payment process.",
+        confirmButtonText: "OK",
+      }).then(() => {
+        if (lastRoute && lastRoute !== window.location.pathname) {
+          window.location.href = lastRoute;
+        }
+      });
+    }
+    if (paymentStatus) {
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
+
   const courseCompleteAction = async () => {
     try {
       const response = await fetch(
@@ -549,7 +588,7 @@ const SingleCourse = () => {
               <img
                 className="w-20 h-20 object-top rounded-full object-cover"
                 alt="Profile Picture"
-                src={reviewer?.img}
+                src={reviewer?.img || "https://via.placeholder.com/150?text=User"}
               />
             </div>
             <div>
@@ -580,6 +619,7 @@ const SingleCourse = () => {
   // console.log('final price',finalPrice, Math.round(finalPrice));
 
   const makePayment = async () => {
+    sessionStorage.setItem("lastRoute", window.location.pathname);
     const paymentData = {
       courseId: courseData._id,
       studentsId: userId,
@@ -819,7 +859,7 @@ const SingleCourse = () => {
                     <img
                       className="w-20 h-20 object-top rounded-full object-cover"
                       alt="Profile Picture"
-                      src={instructor?.img}
+                      src={instructor?.img || "https://via.placeholder.com/150?text=User"}
                     />
                   </div>
                   <div>
@@ -977,38 +1017,37 @@ const SingleCourse = () => {
         <div>
           <Navbar />
           <div className="pt-[73px] pb-20">
-            <div className="rounded-md bg-gradient-to-b from-primary via-[#1870c8] to-[#1c7edf] text-white py-5 border-b mb-8">
+            <div className="rounded-md bg-gradient-to-b from-primary via-[#1870c8] to-[#1c7edf] text-white py-4 sm:py-5 border-b mb-6 sm:mb-8">
               <div className="lg:w-3/4 w-11/12 mx-auto">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-3xl">{courseData?.title}</h3>
-                    <div className="flex gap-1 text-xl mt-2 items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl sm:text-2xl md:text-3xl font-semibold">{courseData?.title}</h3>
+                    <div className="flex gap-1 text-base sm:text-lg mt-2 items-center flex-wrap">
                       {renderStars(calculateAverageRating())}
-                      <p className="ml-3">
+                      <p className="ml-2 text-sm sm:text-base">
                         {courseData?.studentsOpinion?.length || 0} Ratings
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-col md:flex-row gap-2">
-                    {(user?.user?.role === "admin" ||
-                      courseData?.instructorsId?.includes(userId)) && (
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    {(user?.user?.role === "admin" || courseData?.instructorsId?.includes(userId)) && (
                       <Link
                         to={`/dashboard/admin/schedulemeet?${courseId}`}
-                        className="text-primary flex items-center gap-2 bg-white py-2 px-4 rounded-md"
+                        className="text-primary flex items-center justify-center gap-2 bg-white py-2 px-4 rounded-md text-sm"
                       >
                         Create Meet
                       </Link>
                     )}
                     <button
                       onClick={() => downloadFiteAtURL(courseData?.syllabus)}
-                      className="text-primary flex items-center gap-2 bg-white py-2 px-4 rounded-md"
+                      className="text-primary flex items-center justify-center gap-2 bg-white py-2 px-4 rounded-md text-sm"
                     >
-                      <IoMdDownload className="text-xl" />
-                      <p className="">Syllabus</p>
+                      <IoMdDownload className="text-lg" />
+                      <span>Syllabus</span>
                     </button>
                   </div>
                 </div>
-                <p className="pt-5 w-2/3">{courseData?.magnetLine}</p>
+                <p className="pt-3 sm:pt-5 text-sm sm:text-base w-full sm:w-2/3 opacity-90">{courseData?.magnetLine}</p>
               </div>
             </div>
             <div className="lg:col-span-2 col-span-5 border rounded-md h-fit my-8 top-[73px] block lg:hidden">

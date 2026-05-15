@@ -216,7 +216,7 @@ const UploadOtherProject = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {projects.map((p) => (
           <div
-            key={p.id}
+            key={p._id}
             className="bg-white shadow-md rounded-xl overflow-hidden hover:shadow-lg transition relative"
           >
             <img
@@ -241,7 +241,7 @@ const UploadOtherProject = () => {
                   <FaEdit size={18} />
                 </button>
                 <button
-                  onClick={() => handleDelete(p.id)}
+                  onClick={() => handleDelete(p._id)}
                   className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full shadow-md transition"
                   title="Delete Project"
                 >

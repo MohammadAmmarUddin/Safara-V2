@@ -192,10 +192,19 @@ const AdminManualPayments = () => {
                   <td>{index + 1}</td>
                   <td>
                     <div className="flex items-center gap-2">
-                      {req.userId?.img && (
+                      {req.userId?.img ? (
                         <div className="avatar">
                           <div className="w-8 h-8 rounded-full">
-                            <img src={req.userId.img} alt="" />
+                            <img src={req.userId.img} alt="" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                            <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs hidden">
+                              {req.userId?.firstname?.[0]}{req.userId?.lastname?.[0]}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="avatar placeholder">
+                          <div className="w-8 h-8 rounded-full bg-primary text-white text-xs">
+                            <span>{req.userId?.firstname?.[0]}{req.userId?.lastname?.[0]}</span>
                           </div>
                         </div>
                       )}

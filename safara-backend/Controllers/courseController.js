@@ -228,7 +228,10 @@ const courseCount = async (req, res) => {
 };
 const store_id = "testi670bf7e308353";
 const store_passwd = "testi670bf7e308353@ssl";
-const is_live = false; //true for live, false for sandbox
+const is_live = false;
+
+const BASE_URL = process.env.BASE_URL || process.env.FRONTEND_URL || "https://safaraapp.netlify.app";
+const API_BASE_URL = process.env.API_BASE_URL || `http://localhost:4000`;
 
 const PaymentSession = mongoose.model(
   "PaymentSession",
@@ -253,6 +256,43 @@ const getAllTransactions = async (req, res) => {
   }
 };
 
+const deleteTransaction = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid transaction ID" });
+    }
+    const deleted = await PaymentSession.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+    res.status(200).json({ message: "Transaction deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const updateTransaction = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { payment, paymentComplete } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid transaction ID" });
+    }
+    const updateData = {};
+    if (payment !== undefined) updateData.payment = payment;
+    if (paymentComplete !== undefined) updateData.paymentComplete = paymentComplete;
+
+    const updated = await PaymentSession.findByIdAndUpdate(id, updateData, { new: true });
+    if (!updated) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+    res.status(200).json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const order = async (req, res) => {
   const tran_id = new mongoose.Types.ObjectId().toString();
 
@@ -272,10 +312,10 @@ const order = async (req, res) => {
     total_amount: req.body.price,
     currency: "BDT",
     tran_id: tran_id,
-    success_url: `http://localhost:4000/api/course/payment/success/${tran_id}/${encodedData}`,
-    fail_url: `http://localhost:4000/api/course/payment/fail/${req.body.courseId}`,
-    cancel_url: "http://localhost:3030/cancel",
-    ipn_url: "http://localhost:3030/ipn",
+    success_url: `${API_BASE_URL}/api/course/payment/success/${tran_id}/${encodedData}`,
+    fail_url: `${API_BASE_URL}/api/course/payment/fail/${req.body.courseId}`,
+    cancel_url: `${API_BASE_URL}/api/course/payment/cancel/${req.body.courseId}`,
+    ipn_url: `${API_BASE_URL}/api/course/payment/ipn`,
     shipping_method: "Courier",
     product_name: "Computer.",
     product_category: "Electronic",
@@ -355,7 +395,7 @@ const success = async (req, res) => {
       });
     }
 
-    res.redirect(`http://localhost:5173/singleCourse/${courseId}`);
+res.redirect(`${BASE_URL}/singleCourse/${courseId}?payment=success&tran_id=${tran_id}`);
   } catch (err) {
     console.error("Error in success handler:", err);
     res.status(500).json({
@@ -366,8 +406,14 @@ const success = async (req, res) => {
 
 const fail = async (req, res) => {
   const { courseId } = req.params;
-  console.log("🚀 ~ fail ~ courseId:", courseId);
-  res.redirect(`http://localhost:5173/singleCourse/${courseId}`);
+  console.log("Payment failed for course:", courseId);
+  res.redirect(`${BASE_URL}/singleCourse/${courseId}?payment=failed`);
+};
+
+const cancel = async (req, res) => {
+  const { courseId } = req.params;
+  console.log("Payment cancelled for course:", courseId);
+  res.redirect(`${BASE_URL}/singleCourse/${courseId}?payment=cancelled`);
 };
 
 const topCourses = async (req, res) => {
@@ -479,6 +525,45 @@ const unlockVideo = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in unlockVideo:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const removeStudentFromCourse = async (req, res) => {
+  try {
+    const { courseId, studentId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(courseId) || !mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({ error: "Invalid courseId or studentId" });
+    }
+
+    const course = await courseModel.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    const studentExists = course.students.some(
+      (s) => s.studentsId.toString() === studentId
+    );
+
+    if (!studentExists) {
+      return res.status(404).json({ error: "Student not found in this course" });
+    }
+
+    const updatedCourse = await courseModel.findByIdAndUpdate(
+      courseId,
+      {
+        $pull: { students: { studentsId: studentId } },
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      message: "Student removed from course successfully",
+      updatedCourse,
+    });
+  } catch (error) {
+    console.error("Error removing student from course:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -1099,9 +1184,12 @@ module.exports = {
   giveRating,
   courseCount,
   getAllTransactions,
+  deleteTransaction,
+  updateTransaction,
   order,
   success,
   fail,
+  cancel,
   topCourses,
   unlockVideo,
   completeCourse,
@@ -1116,4 +1204,5 @@ module.exports = {
   getTotalPaymentBySpecificStudent,
   getUserCourseProgress,
   getVideosCount,
+  removeStudentFromCourse,
 };

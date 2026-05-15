@@ -23,11 +23,14 @@ const {
   getAverageCompletionTime,
   getAllTransactions,
   fail,
+  cancel,
   getTotalPayment,
   getTotalPaymentBySpecificStudent,
-
   getVideosCount,
   getUserCourseProgress,
+  removeStudentFromCourse,
+  deleteTransaction,
+  updateTransaction,
 } = require("../Controllers/courseController.js");
 
 const router = express.Router();
@@ -36,8 +39,9 @@ const router = express.Router();
 router.post("/createCourse", createCourse);
 router.post("/giveRating/:courseId", giveRating);
 router.post("/payment/order", order);
-router.post("/payment/success/:tran_id/:encodedData", success);
-router.post("/payment/fail/:courseId", fail);
+router.get("/payment/success/:tran_id/:encodedData", success);
+router.get("/payment/fail/:courseId", fail);
+router.get("/payment/cancel/:courseId", cancel);
 
 //get
 router.get("/getAllCourses", getAllCourses);
@@ -60,11 +64,14 @@ router.get("/getSpentByStudent/:studentId", getTotalPaymentBySpecificStudent);
 
 //delete
 router.delete("/deleteCourse/:id", deleteCourse);
+router.delete("/deleteTransaction/:id", deleteTransaction);
 
 //patch
 router.patch("/updateCourse/:id", updateCourse);
 router.patch("/unlockVideo/:id", unlockVideo);
 router.patch("/completeCourse/:id", completeCourse); //id == user's id, not course id
 router.patch("/completeQuiz/:id", completeQuiz); //id == user's id, not course id
+router.patch("/removeStudent/:courseId/:studentId", removeStudentFromCourse);
+router.patch("/updateTransaction/:id", updateTransaction);
 
 module.exports = router;

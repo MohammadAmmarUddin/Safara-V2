@@ -125,29 +125,29 @@ const AllUsers = () => {
   useEffect(() => { setCurrentPage(1); }, [searchTerm]);
 
   return (
-    <div className="min-h-screen lg:p-8 pt-5">
+    <div className="w-full max-w-7xl mx-auto">
       <Helmet>
         <title>All Users - Admin Dashboard</title>
       </Helmet>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-primary">All Users</h1>
-          <p className="text-gray-500 text-sm mt-1">{allUsers.length} total users</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">All Users</h1>
+          <p className="text-gray-500 text-xs sm:text-sm mt-1">{allUsers.length} total users</p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="relative w-full sm:w-64 md:w-72">
+          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
           <input
             type="text"
-            placeholder="Search by name, email, phone..."
-            className="pl-10 pr-4 py-2.5 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-sm"
+            placeholder="Search users..."
+            className="pl-10 pr-4 py-2 sm:py-2.5 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs sm:text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="table w-full">
             <thead>
@@ -173,8 +173,13 @@ const AllUsers = () => {
                   <td className="pl-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="avatar">
-                        <div className="w-10 h-10 rounded-full ring-1 ring-gray-200">
-                          <img src={user.img || "/default-avatar.png"} alt="" className="object-cover" />
+                        <div className="w-10 h-10 rounded-full ring-1 ring-gray-200 overflow-hidden bg-gray-100">
+                          {user.img ? (
+                            <img src={user.img} alt="" className="object-cover w-full h-full" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                          ) : null}
+                          <div className={`w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-medium text-sm ${user.img ? 'hidden' : ''}`}>
+                            {user.firstname?.[0]}{user.lastname?.[0]}
+                          </div>
                         </div>
                       </div>
                       <div>

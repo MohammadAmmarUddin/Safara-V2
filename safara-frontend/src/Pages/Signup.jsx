@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useSignup } from "../hooks/useSignup";
 import { FaAngleLeft } from "react-icons/fa6";
 import { useState } from "react";
@@ -8,7 +8,9 @@ import { Helmet } from "react-helmet";
 
 const Signup = () => {
   const { signup } = useSignup();
+  const navigate = useNavigate();
   const [uploadPerc, setUploadPerc] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const baseUrl = import.meta.env.VITE_SAFARA_baseUrl;
   const {
     register,
@@ -22,6 +24,8 @@ const Signup = () => {
   const sanitizeInput = (input) => DOMPurify.sanitize(input.trim());
 
   const onSubmit = async (data) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     const { firstname, lastname, email, phone, password } = data;
 
     const sanitizedFirstname = sanitizeInput(firstname);
@@ -29,7 +33,7 @@ const Signup = () => {
     const sanitizedEmail = sanitizeInput(email);
     const sanitizedPhone = sanitizeInput(phone);
     const sanitizedPassword = sanitizeInput(password);
-    const role = "admin";
+    const role = "user";
     const prevRole = role;
 
     try {
@@ -78,8 +82,11 @@ const Signup = () => {
         );
         console.log("Signup successful without image.");
       }
+      navigate("/login");
     } catch (error) {
       console.error("Error in signup: ", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -202,9 +209,10 @@ const Signup = () => {
         <div className="form-control mt-10">
           <button
             type="submit"
-            className="bg-primary py-3 rounded-md text-white"
+            className="bg-primary py-3 rounded-md text-white disabled:opacity-50"
+            disabled={isSubmitting}
           >
-            Signup
+            {isSubmitting ? "Signing up..." : "Signup"}
           </button>
         </div>
         <p className="text-center pt-2">

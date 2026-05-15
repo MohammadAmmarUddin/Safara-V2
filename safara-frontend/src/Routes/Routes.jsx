@@ -65,6 +65,9 @@ const PaymentSettings = lazy(() =>
 const AdminWhatsApp = lazy(() =>
   import("../Pages/Dashboard/AdminDashboard/AdminWhatsApp")
 );
+const SystemHealth = lazy(() =>
+  import("../Pages/Dashboard/AdminDashboard/SystemHealth")
+);
 const ErrorPage = lazy(() => import("../Pages/ErrorPage"));
 
 // 💡 Helper to wrap lazy-loaded components safely
@@ -133,6 +136,10 @@ export const router = createBrowserRouter([
       {
         path: "/dashboard/admin/whatsappSettings",
         element: Lazy(AdminWhatsApp),
+      },
+      {
+        path: "/dashboard/admin/systemHealth",
+        element: Lazy(SystemHealth),
       },
     ],
   },

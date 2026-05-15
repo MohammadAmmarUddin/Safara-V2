@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema(
     },
     img: {
       type: String,
-      required: true,
+      default: "",
     },
     location: {
       type: String,

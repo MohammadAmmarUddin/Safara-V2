@@ -15,6 +15,7 @@ const paymentSettingsRoutes = require("./Routes/paymentSettingsRoutes.js");
 const whatsappSettingsRoutes = require("./Routes/whatsappSettingsRoutes.js");
 const uploadRoutes = require("./Routes/uploadRoutes.js");
 const otherProjectRoutes = require("./Routes/otherProjectRoutes.js");
+const adminRoutes = require("./Routes/adminRoutes.js");
 
 const app = express();
 
@@ -110,6 +111,7 @@ app.use("/api/payment-settings", paymentSettingsRoutes);
 app.use("/api/whatsapp-settings", whatsappSettingsRoutes);
 app.use("/api", uploadRoutes);
 app.use("/api/other-projects", otherProjectRoutes);
+app.use("/api/admin", adminRoutes);
 
 /* ================================
    ✅ Global Error Handler (production safe)

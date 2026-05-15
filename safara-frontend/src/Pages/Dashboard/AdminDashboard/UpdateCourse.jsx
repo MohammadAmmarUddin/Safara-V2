@@ -40,7 +40,8 @@ function UpdateCourse() {
   const [totalFiles, setTotalFiles] = useState(0);
   const [error, setError] = useState("");
   const [quizzes, setQuizzes] = useState([]);
-  const baseUrl = import.meta.env.VITE_MAHAD_baseUrl;
+  const [courseData, setCourseData] = useState(null);
+  const baseUrl = import.meta.env.VITE_SAFARA_baseUrl;
   // Fetch course data
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -50,6 +51,7 @@ function UpdateCourse() {
         );
         if (response.ok) {
           const courseData = await response.json();
+          setCourseData(courseData);
           setCourseTitle(courseData.title || "");
           setMagnetLine(courseData.magnetLine || "");
           setCategory(courseData.category || "");
@@ -68,18 +70,7 @@ function UpdateCourse() {
               selectedAnswer: q.ans.toString(),
             })) || []
           );
-
-          if (courseData.instructorsId) {
-            const instructors = courseData.instructorsId
-              .map((instructorId) => {
-                const instructor = selectInstructors.find(
-                  (inst) => inst._id === instructorId
-                );
-                return instructor ? { ...instructor } : null;
-              })
-              .filter((inst) => inst !== null);
-            setSelectedInstructors(instructors);
-          }
+          setSelectedInstructors(courseData.instructorsId || []);
         } else {
           console.error("Failed to fetch course data");
         }
@@ -89,7 +80,7 @@ function UpdateCourse() {
     };
 
     fetchCourseData();
-  }, [id, selectInstructors]);
+  }, [id]);
 
   // Fetch instructors data
   useEffect(() => {
@@ -99,12 +90,21 @@ function UpdateCourse() {
         .then((res) => res.json())
         .then((data) => {
           setSelectInstructors(data);
+          if (courseData?.instructorsId?.length > 0) {
+            const instructors = courseData.instructorsId
+              .map((instructorId) => {
+                const instructor = data.find((inst) => inst._id === instructorId);
+                return instructor || null;
+              })
+              .filter((inst) => inst !== null);
+            setSelectedInstructors(instructors);
+          }
         })
         .catch((error) => console.log(error));
     };
 
     fetchAllUsers();
-  }, []);
+  }, [courseData]);
 
   // Handle input changes
   const handleInputChange = (event) => {
@@ -635,7 +635,7 @@ function UpdateCourse() {
                         <div className="flex gap-3 items-center">
                           <div className="avatar">
                             <div className="w-10 h-10 border rounded-md object-cover">
-                              <img src={instructor.img} alt={instructor.img} />
+                              <img src={instructor.img || "https://via.placeholder.com/150?text=User"} alt={instructor.img} />
                             </div>
                           </div>
                           <div>

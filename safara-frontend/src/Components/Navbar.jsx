@@ -98,12 +98,21 @@ const Navbar = () => {
                       role="button"
                       className="btn btn-ghost btn-circle avatar"
                     >
-                      <div className="w-9 rounded-full border-2 border-white">
-                        <img
-                          className="w-9 h-9 object-top rounded-full object-cover"
-                          alt="Profile Picture"
-                          src={userData?.img}
-                        />
+                      <div className="w-9 rounded-full border-2 border-white overflow-hidden bg-gray-200">
+                        {userData?.img ? (
+                          <img
+                            className="w-9 h-9 object-top rounded-full object-cover"
+                            alt="Profile"
+                            src={userData.img}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium ${userData?.img ? 'hidden' : ''}`}>
+                          {userData?.firstname?.[0]}{userData?.lastname?.[0]}
+                        </div>
                       </div>
                     </div>
                     <ul
